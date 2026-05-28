@@ -1,0 +1,690 @@
+# ⚖️ Legal Case Management Microservices Platform
+
+> ### A production-grade, cloud-ready **Legal Case Management Backend System** built on a modern microservices architecture — engineered to handle the full lifecycle of legal matters, from client intake to case resolution, court scheduling, and secure billing.
+
+**✍️ Created & Maintained by [Asoh Yannick](https://github.com/asohyannick) — .NET Backend Developer** 👨‍💻🚀
+
+---
+
+![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?style=for-the-badge&logo=dotnet)
+![C#](https://img.shields.io/badge/C%23-13.0-239120?style=for-the-badge&logo=csharp)
+![ASP.NET Core](https://img.shields.io/badge/ASP.NET_Core-10.0-512BD4?style=for-the-badge&logo=dotnet)
+![Docker](https://img.shields.io/badge/Docker-Enabled-2496ED?style=for-the-badge&logo=docker)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Latest-336791?style=for-the-badge&logo=postgresql)
+![MySQL](https://img.shields.io/badge/MySQL-Latest-4479A1?style=for-the-badge&logo=mysql)
+![MongoDB](https://img.shields.io/badge/MongoDB-Latest-47A248?style=for-the-badge&logo=mongodb)
+![Redis](https://img.shields.io/badge/Redis-Cache-DC382D?style=for-the-badge&logo=redis)
+![Kafka](https://img.shields.io/badge/Apache_Kafka-Streaming-231F20?style=for-the-badge&logo=apachekafka)
+![Stripe](https://img.shields.io/badge/Stripe-Billing-635BFF?style=for-the-badge&logo=stripe)
+![DocuSign](https://img.shields.io/badge/DocuSign-eSignature-FFD700?style=for-the-badge&logo=docusign)
+![EF Core](https://img.shields.io/badge/EF_Core-10.0-512BD4?style=for-the-badge&logo=dotnet)
+![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
+
+---
+
+## 📑 Table of Contents
+
+- [🌟 Overview](#-overview)
+- [🏛️ Architecture](#️-architecture)
+- [🛠️ Tech Stack](#️-tech-stack)
+- [🧩 Services](#-services)
+- [🔗 Third-Party Integrations](#-third-party-integrations)
+- [🚀 Getting Started](#-getting-started)
+- [🔑 Environment Variables](#-environment-variables)
+- [🐳 Running with Docker](#-running-with-docker)
+- [🧪 Running Tests](#-running-tests)
+- [📁 Project Structure](#-project-structure)
+- [🔐 Security & Compliance](#-security--compliance)
+- [🤝 Contributing](#-contributing)
+- [📜 Code of Conduct](#-code-of-conduct)
+- [📄 License](#-license)
+
+---
+
+## 🌟 Overview
+
+The **Legal Case Management Microservices Platform** is a fully distributed, event-driven backend designed to power law firms, legal departments, and courts of any scale. Every facet of legal practice is covered — from client onboarding and conflict-of-interest checks to court date scheduling, secure document e-signing, granular time tracking, and automated billing.
+
+Each service is **independently deployable**, **loosely coupled** via **Apache Kafka**, and exposes versioned **REST APIs** secured with **JWT authentication** and **role-based access control** (Client, Paralegal, Associate, Partner, Admin).
+
+### ✨ Key Highlights
+
+> ⚖️ **Full Case Lifecycle** — intake, assignment, court scheduling, resolution, and archiving
+
+> 📝 **DocuSign Integration** — send, track, and store legally binding e-signatures on documents
+
+> 🏛️ **Court API Integration** — sync hearing dates, docket entries, and filing deadlines automatically
+
+> 🔍 **Conflict-of-Interest Checks** — automated checks against client and opposing party records before case acceptance
+
+> ⏱️ **Time Tracking & Billing** — billable hour capture, invoice generation, and Stripe payment processing
+
+> 💬 **Secure Client Communications** — encrypted message threads tied to case records
+
+> 🗄️ **Polyglot Persistence** — right database for each service (PostgreSQL · MySQL · MongoDB · Redis)
+
+> ⚡ **Redis Caching** — sub-millisecond reads for conflict checks, case lookups, and session data
+
+> 🧪 **Test Pyramid** — Unit, Integration, and Functional tests with Testcontainers
+
+---
+
+## 🏛️ Architecture
+
+```
+                    ┌──────────────────────────────────────────────────┐
+                    │                   API  Gateway                    │
+                    │         Routing · JWT Auth · Rate Limiting        │
+                    │              Role-Based Access Control            │
+                    └───┬──────┬───────┬──────┬──────┬─────────────────┘
+                        │      │       │      │      │
+          ┌─────────────▼─┐  ┌─▼───────▼─┐  ┌▼──────────────┐  ┌─────────────────┐
+          │  Auth Service  │  │   Case     │  │   Document    │  │  Court Schedule │
+          │ (PostgreSQL +  │  │  Service   │  │   Service     │  │    Service      │
+          │    Redis)      │  │(PostgreSQL)│  │  (MongoDB +   │  │  (PostgreSQL)   │
+          │                │  │            │  │   DocuSign)   │  │  + Court APIs   │
+          └────────────────┘  └────────────┘  └───────────────┘  └─────────────────┘
+                        │          │               │                    │
+          ┌─────────────▼─┐  ┌─────▼──────────┐  ┌▼──────────────────────────────┐
+          │Conflict Check  │  │ Communication  │  │       Billing Service          │
+          │   Service      │  │    Service     │  │  (PostgreSQL + Stripe +        │
+          │  (Redis +      │  │   (MongoDB)    │  │   Time Tracking + Invoicing)   │
+          │  PostgreSQL)   │  │                │  │                                │
+          └────────────────┘  └────────────────┘  └────────────────────────────────┘
+                        │          │               │                    │
+                        └──────────┴───────────────┴────────────────────┘
+                                                   │
+                                      ┌────────────▼────────────┐
+                                      │      Apache  Kafka       │
+                                      │   Domain Event Bus       │
+                                      └──────┬──────────┬────────┘
+                                             │          │
+                          ┌──────────────────▼──┐   ┌───▼──────────────────────┐
+                          │  Notification Service│   │    Audit Log Service     │
+                          │      (MySQL)         │   │      (MongoDB)           │
+                          │  Email·SMS·In-App    │   │  Immutable Audit Trail   │
+                          └─────────────────────┘   └──────────────────────────┘
+```
+
+> 🔒 All external traffic flows exclusively through the **API Gateway**.
+> ⚡ **Redis** sits in front of Conflict Check and Auth for ultra-fast lookups.
+> 📊 **.NET Aspire** provides distributed tracing, health checks, and metrics dashboards out of the box.
+
+---
+
+## 🛠️ Tech Stack
+
+| 🏷️ Category | 🔧 Technology |
+|---|---|
+| ⚙️ **Runtime** | .NET 10 · C# 13 · ASP.NET Core 10 |
+| 🗄️ **Relational DBs** | PostgreSQL · MySQL |
+| 📄 **Document DB** | MongoDB |
+| ⚡ **Cache / Session** | Redis |
+| 🔁 **ORM** | Entity Framework Core 10 |
+| 📨 **Messaging** | Apache Kafka |
+| 💳 **Payments & Billing** | Stripe API (Invoices · Charges · Refunds · Metered Billing) |
+| ✍️ **E-Signatures** | DocuSign eSignature REST API |
+| 🏛️ **Court Integration** | Court Filing & Docket APIs (PACER / State Court APIs) |
+| 🐳 **Containers** | Docker · Docker Compose |
+| 🔐 **Auth** | JWT Bearer · ASP.NET Core Identity · RBAC |
+| ☁️ **Service Discovery** | .NET Aspire |
+| 🧪 **Testing** | xUnit · Testcontainers · NSubstitute · FluentAssertions |
+| ✅ **Validation** | FluentValidation |
+| 📋 **API Docs** | Swagger · OpenAPI 3 |
+| 📊 **Logging** | Serilog (structured, correlated logs) |
+| 🏗️ **Patterns** | Clean Architecture · CQRS · MediatR · Repository · Outbox |
+| 🆔 **Typed IDs** | Vogen (strongly-typed value objects) |
+| 🔏 **Encryption** | ASP.NET Core Data Protection · AES-256 at rest |
+
+---
+
+## 🧩 Services
+
+### 🔐 Auth Service
+Manages attorney, paralegal, client, and admin registration, login, role assignment, JWT token issuance, and refresh token rotation. Controls who can see and act on what within the platform.
+- 🗄️ **Database:** PostgreSQL (via EF Core) + Redis (session & token cache)
+- 🌐 **Port:** `5001`
+- 🔑 **Responsibilities:** Register · Login · Refresh Token · RBAC · MFA Support
+
+---
+
+### ⚖️ Case Service
+The core of the platform. Manages the full case lifecycle — intake, attorney assignment, conflict-of-interest triggering, status transitions (Open → Active → Pending → Closed → Archived), and case metadata.
+- 🗄️ **Database:** PostgreSQL (via EF Core)
+- 🌐 **Port:** `5002`
+- 🔑 **Responsibilities:** Case CRUD · Attorney Assignment · Status Transitions · Conflict Trigger · Case Search
+
+---
+
+### 📄 Document Service
+Manages secure upload, versioning, and retrieval of legal documents. Integrates with **DocuSign** to send envelopes for e-signature, track signature status via webhooks, and store signed copies back to the case record.
+- 🗄️ **Database:** MongoDB (document metadata) + Object Storage (file binaries)
+- 🌐 **Port:** `5003`
+- 🔑 **Responsibilities:** Upload · Versioning · DocuSign Send · Signature Tracking · Webhook Processing · Secure Download
+
+---
+
+### 🏛️ Court Schedule Service
+Manages court hearing dates, deadlines, and docket entries. Syncs with external **Court APIs** (PACER / state-level) to pull filing deadlines and hearing schedules. Sends deadline reminders via Kafka events.
+- 🗄️ **Database:** PostgreSQL (via EF Core)
+- 🌐 **Port:** `5004`
+- 🔑 **Responsibilities:** Hearing CRUD · Court API Sync · Deadline Tracking · Calendar Export (iCal) · Reminder Events
+
+---
+
+### 🔍 Conflict of Interest Service
+Performs automated conflict-of-interest checks by comparing new client intake data and opposing party information against all existing clients, cases, and attorney relationships. Results are cached in Redis for fast repeated lookups.
+- 🗄️ **Database:** PostgreSQL (via EF Core) + Redis (conflict result cache)
+- 🌐 **Port:** `5005`
+- 🔑 **Responsibilities:** Conflict Check · Opposing Party Matching · Relationship Graph · Cache Invalidation · Audit Logging
+
+---
+
+### 💬 Communication Service
+Provides secure, encrypted message threads between attorneys and clients, tied directly to case records. All communications are stored and surfaced in a case timeline. Supports file attachments within threads.
+- 🗄️ **Database:** MongoDB
+- 🌐 **Port:** `5006`
+- 🔑 **Responsibilities:** Message Threads · Secure Messaging · File Attachments · Read Receipts · Case Timeline
+
+---
+
+### 💰 Billing Service
+Captures billable time entries (start/stop timer or manual entry), generates itemized invoices, and processes attorney fee payments through **Stripe**. Supports hourly, flat-fee, and contingency billing models with full refund management.
+- 🗄️ **Database:** PostgreSQL (via EF Core)
+- 🌐 **Port:** `5007`
+- 🔑 **Responsibilities:** Time Entry · Invoice Generation · Stripe Charges · Refunds · Trust Account Tracking · Billing Reports
+
+---
+
+### 📩 Notification Service
+Consumes Kafka domain events and dispatches email, SMS, and in-app notifications — court deadline reminders, document signature requests, invoice receipts, new message alerts, and case status changes.
+- 🗄️ **Database:** MySQL (via EF Core)
+- 🌐 **Port:** `5008`
+- 🔑 **Responsibilities:** Email · SMS · In-App Alerts · Event Consumption · Notification Preferences · Delivery Tracking
+
+---
+
+### 📋 Audit Log Service
+Consumes all domain events from Kafka and writes an **immutable, tamper-evident audit trail** of every action across the platform — required for legal compliance, malpractice defence, and bar association audits.
+- 🗄️ **Database:** MongoDB (append-only collection)
+- 🌐 **Port:** `5009`
+- 🔑 **Responsibilities:** Event Consumption · Immutable Log · Compliance Reporting · Tamper Detection · Log Export
+
+---
+
+## 🔗 Third-Party Integrations
+
+### ✍️ DocuSign eSignature
+Embedded in the **Document Service** to send signature envelopes, track signer status in real time via webhooks, and automatically store completed documents back to the case record.
+
+```
+Attorney uploads doc → Document Service → DocuSign API (send envelope)
+                                        ← DocuSign Webhook (signed/declined)
+                                        → Store signed copy → Notify via Kafka
+```
+
+### 🏛️ Court APIs (PACER / State Courts)
+Integrated into the **Court Schedule Service** to pull docket entries, hearing dates, and filing deadlines directly from court systems, keeping case calendars automatically in sync.
+
+```
+Scheduled sync job → Court API → Parse docket entries
+                               → Create/update hearings in DB
+                               → Emit DeadlineApproaching events → Kafka
+```
+
+### 🔍 Conflict-of-Interest Engine
+Built into the **Conflict Check Service** using a relationship graph stored in PostgreSQL and cached in Redis. Checks run automatically at case intake and are re-triggered on opposing party changes.
+
+```
+New case intake → Case Service → Kafka (CaseIntakeInitiated)
+               → Conflict Check Service → Graph query + Redis cache
+               → ConflictFound / ConflictClear event → Kafka → Notify attorney
+```
+
+---
+
+## 🚀 Getting Started
+
+### ✅ Prerequisites
+
+| 🔧 Tool | 📌 Version | 🔗 Link |
+|---|---|---|
+| 🔵 .NET SDK | 10.0+ | [Download](https://dotnet.microsoft.com/en-us/download/dotnet/10.0) |
+| 🐳 Docker Desktop | 24.0+ | [Download](https://www.docker.com/products/docker-desktop/) |
+| 🐙 Git | Latest | [Download](https://git-scm.com/) |
+
+---
+
+### 📥 Clone the Repository
+
+```bash
+git clone https://github.com/asohyannick/legal_case_management.git
+cd legal_case_management
+```
+
+### 📦 Restore & Build a Service
+
+```bash
+cd case_service
+dotnet restore
+dotnet build
+```
+
+---
+
+## 🔑 Environment Variables
+
+Copy `.env.example` to `.env` and populate your values:
+
+```bash
+cp .env.example .env
+```
+
+```env
+# ─── Auth Service ────────────────────────────────────────────────────────────
+ASPNETCORE_ENVIRONMENT=Development
+ConnectionStrings__DefaultConnection=Host=localhost;Port=5432;Database=legal_auth_db;Username=postgres;Password=yourpassword
+Redis__ConnectionString=localhost:6379
+JwtSettings__Secret=your_super_secret_jwt_key_minimum_32_chars
+JwtSettings__ExpiryMinutes=60
+JwtSettings__RefreshTokenExpiryDays=7
+
+# ─── Case Service ────────────────────────────────────────────────────────────
+ConnectionStrings__DefaultConnection=Host=localhost;Port=5432;Database=legal_cases_db;Username=postgres;Password=yourpassword
+
+# ─── Document Service ────────────────────────────────────────────────────────
+ConnectionStrings__MongoDb=mongodb://localhost:27017
+MongoDb__DatabaseName=legal_documents
+DocuSign__IntegrationKey=your_docusign_integration_key
+DocuSign__SecretKey=your_docusign_secret_key
+DocuSign__AccountId=your_docusign_account_id
+DocuSign__BaseUrl=https://demo.docusign.net/restapi
+DocuSign__WebhookSecret=your_docusign_hmac_secret
+
+# ─── Court Schedule Service ──────────────────────────────────────────────────
+ConnectionStrings__DefaultConnection=Host=localhost;Port=5432;Database=legal_court_db;Username=postgres;Password=yourpassword
+CourtApi__PacerUsername=your_pacer_username
+CourtApi__PacerPassword=your_pacer_password
+CourtApi__BaseUrl=https://pcl.uscourts.gov/pcl/
+
+# ─── Conflict Check Service ──────────────────────────────────────────────────
+ConnectionStrings__DefaultConnection=Host=localhost;Port=5432;Database=legal_conflict_db;Username=postgres;Password=yourpassword
+Redis__ConnectionString=localhost:6379
+Redis__ConflictCacheTtlMinutes=120
+
+# ─── Communication Service ───────────────────────────────────────────────────
+ConnectionStrings__MongoDb=mongodb://localhost:27017
+MongoDb__DatabaseName=legal_communications
+Encryption__Key=your_aes256_encryption_key_base64_encoded
+
+# ─── Billing Service ─────────────────────────────────────────────────────────
+ConnectionStrings__DefaultConnection=Host=localhost;Port=5432;Database=legal_billing_db;Username=postgres;Password=yourpassword
+Stripe__SecretKey=sk_test_your_stripe_secret_key
+Stripe__WebhookSecret=whsec_your_webhook_signing_secret
+Stripe__PublishableKey=pk_test_your_publishable_key
+
+# ─── Notification Service ────────────────────────────────────────────────────
+ConnectionStrings__MySql=Server=localhost;Port=3306;Database=legal_notifications;User=root;Password=yourpassword
+Mail__Host=smtp.mailtrap.io
+Mail__Port=587
+Mail__Username=your_smtp_username
+Mail__Password=your_smtp_password
+Twilio__AccountSid=your_twilio_account_sid
+Twilio__AuthToken=your_twilio_auth_token
+Twilio__FromNumber=+1234567890
+
+# ─── Kafka (all services) ────────────────────────────────────────────────────
+Kafka__BootstrapServers=localhost:9092
+Kafka__ConsumerGroupId=legal-platform-group
+```
+
+> ⚠️ **Critical:** Never commit `.env`, `appsettings.Development.json`, or any file containing real credentials.
+> Only `.env.example` with placeholder values belongs in version control.
+
+---
+
+## 🐳 Running with Docker
+
+### 🟢 Start All Services
+
+```bash
+docker compose up --build
+```
+
+### 🎯 Start a Specific Service
+
+```bash
+docker compose up --build case_service
+docker compose up --build billing_service
+```
+
+### 🔴 Stop & Clean Up
+
+```bash
+# Stop containers
+docker compose down
+
+# Stop and wipe all volumes (database data)
+docker compose down -v
+```
+
+### 🌐 Service URLs After Startup
+
+| 🧩 Service | 🌍 Base URL | 📋 Swagger UI |
+|---|---|---|
+| 🔐 Auth | http://localhost:5001 | http://localhost:5001/swagger |
+| ⚖️ Case | http://localhost:5002 | http://localhost:5002/swagger |
+| 📄 Document | http://localhost:5003 | http://localhost:5003/swagger |
+| 🏛️ Court Schedule | http://localhost:5004 | http://localhost:5004/swagger |
+| 🔍 Conflict Check | http://localhost:5005 | http://localhost:5005/swagger |
+| 💬 Communication | http://localhost:5006 | http://localhost:5006/swagger |
+| 💰 Billing | http://localhost:5007 | http://localhost:5007/swagger |
+| 📩 Notification | http://localhost:5008 | http://localhost:5008/swagger |
+| 📋 Audit Log | http://localhost:5009 | http://localhost:5009/swagger |
+
+---
+
+## 🧪 Running Tests
+
+Each service contains three test suites — **Unit**, **Integration**, and **Functional** — following the standard testing pyramid.
+
+```bash
+# ── Run ALL tests in a service ──────────────────────────────────────
+cd case_service
+dotnet test
+
+# ── Unit tests only ─────────────────────────────────────────────────
+dotnet test tests/case_service.UnitTests
+
+# ── Integration tests only (requires Docker) ────────────────────────
+dotnet test tests/case_service.IntegrationTests
+
+# ── Functional / end-to-end tests (requires Docker) ─────────────────
+dotnet test tests/case_service.FunctionalTests
+
+# ── With code coverage report ───────────────────────────────────────
+dotnet test --collect:"XPlat Code Coverage"
+
+# ── Run tests across all services from repo root ────────────────────
+Get-ChildItem -Recurse -Filter "*.sln" | ForEach-Object {
+    dotnet test $_.FullName
+}
+```
+
+> 💡 **Testcontainers** is used for Integration and Functional tests — it spins up real PostgreSQL, MongoDB, MySQL, and Redis containers automatically. Docker must be running.
+
+---
+
+## 📁 Project Structure
+
+```
+legal_case_management/
+│
+├── 🔐 auth_service/
+│   ├── src/
+│   │   ├── auth_service.Core/               # 🧠 Domain entities, value objects, interfaces
+│   │   ├── auth_service.UseCases/           # ⚙️  CQRS commands, queries, handlers
+│   │   ├── auth_service.Infrastructure/     # 🔌 EF Core, Redis, Identity, email
+│   │   ├── auth_service.Web/                # 🌐 ASP.NET Core API, endpoints, middleware
+│   │   ├── auth_service.ServiceDefaults/    # ☁️  Shared Aspire defaults
+│   │   └── auth_service.AspireHost/         # 🎛️  Aspire orchestration host
+│   ├── tests/
+│   │   ├── auth_service.UnitTests/
+│   │   ├── auth_service.IntegrationTests/
+│   │   └── auth_service.FunctionalTests/
+│   └── Dockerfile
+│
+├── ⚖️  case_service/
+│   ├── src/  ...
+│   ├── tests/ ...
+│   └── Dockerfile
+│
+├── 📄 document_service/           # DocuSign integration lives here
+│   ├── src/  ...
+│   ├── tests/ ...
+│   └── Dockerfile
+│
+├── 🏛️  court_schedule_service/    # Court API sync lives here
+│   ├── src/  ...
+│   ├── tests/ ...
+│   └── Dockerfile
+│
+├── 🔍 conflict_check_service/     # Conflict-of-interest engine + Redis
+│   ├── src/  ...
+│   ├── tests/ ...
+│   └── Dockerfile
+│
+├── 💬 communication_service/
+│   ├── src/  ...
+│   ├── tests/ ...
+│   └── Dockerfile
+│
+├── 💰 billing_service/            # Stripe + time tracking
+│   ├── src/  ...
+│   ├── tests/ ...
+│   └── Dockerfile
+│
+├── 📩 notification_service/
+│   ├── src/  ...
+│   ├── tests/ ...
+│   └── Dockerfile
+│
+├── 📋 audit_log_service/          # Immutable Kafka-driven audit trail
+│   ├── src/  ...
+│   ├── tests/ ...
+│   └── Dockerfile
+│
+├── 🐳 docker-compose.yml
+├── 🔒 .gitignore
+├── ✂️  .gitattributes
+└── 📖 README.md
+```
+
+---
+
+## 🔐 Security & Compliance
+
+Legal platforms handle highly sensitive data. The following security measures are enforced across all services:
+
+### 🛡️ Authentication & Authorisation
+- 🔑 **JWT Bearer tokens** with short expiry and **refresh token rotation**
+- 👥 **Role-Based Access Control** — Client · Paralegal · Associate · Partner · Admin
+- 🔒 **Resource-level authorisation** — attorneys can only access cases assigned to them
+
+### 🔏 Data Protection
+- 🔐 **AES-256 encryption** for all client communications and sensitive documents at rest
+- 🌐 **TLS 1.3** enforced on all service-to-service and client-to-gateway communication
+- 🧂 **Bcrypt password hashing** with per-user salts via ASP.NET Core Identity
+
+### 📋 Audit & Compliance
+- 📝 **Immutable audit trail** via the Audit Log Service — every create, update, delete is logged
+- 🔍 **Conflict-of-interest checks** run automatically at case intake — results are logged permanently
+- 📊 **Structured correlated logging** with Serilog — trace IDs span all services per request
+
+### ⚠️ Secrets Management
+- ❌ **No secrets in source control** — enforce via `.gitignore` and pre-commit hooks
+- ✅ **Environment variables** or a secrets manager (Azure Key Vault / AWS Secrets Manager) in production
+- 🔄 **Stripe webhook signature validation** on every inbound webhook call
+- ✍️ **DocuSign HMAC validation** on every inbound DocuSign webhook
+
+---
+
+## 🤝 Contributing
+
+### 💛 Welcome, Contributor!
+
+Thank you for your interest in contributing to the **Legal Case Management Platform**! 🎉
+Whether you're a .NET veteran, a database specialist, an integration expert, or a first-time open-source contributor — **every contribution matters and you are welcome here**. 🙌
+
+---
+
+### 🧭 Step-by-Step Contribution Guide
+
+#### **Step 1 — 🍴 Fork the Repository**
+Click the **Fork** button at the top right of this page to create your personal copy.
+
+#### **Step 2 — 📥 Clone Your Fork**
+
+```bash
+git clone https://github.com/asohyannick/legal_case_management.git
+cd legal_case_management
+```
+
+#### **Step 3 — 🌿 Create a Feature Branch**
+
+```bash
+# ✨ New feature
+git checkout -b feat/add-docusign-bulk-send
+
+# 🐛 Bug fix
+git checkout -b fix/conflict-check-cache-invalidation
+
+# 📖 Documentation
+git checkout -b docs/update-billing-service-env-vars
+
+# ♻️  Refactoring
+git checkout -b refactor/case-service-clean-architecture
+
+# 🧪 Tests
+git checkout -b test/add-audit-log-integration-tests
+```
+
+#### **Step 4 — 💻 Make Your Changes**
+
+- ✅ Follow the existing code style enforced by `.editorconfig`
+- ✅ Add or update **unit tests** for any logic introduced or modified
+- ✅ Run `dotnet build` and `dotnet test` locally before pushing
+- ✅ Keep commits small, atomic, and focused — one logical change per commit
+- ✅ For integrations (DocuSign, Stripe, Court APIs) — mock external calls in tests
+
+#### **Step 5 — 📝 Commit with a Clear Message**
+
+We follow the [Conventional Commits](https://www.conventionalcommits.org/) specification:
+
+```bash
+# ✨ Features
+git commit -m "feat(document): add DocuSign bulk envelope send support"
+git commit -m "feat(billing): implement contingency fee billing model"
+git commit -m "feat(conflict): add opposing counsel relationship check"
+
+# 🐛 Bug fixes
+git commit -m "fix(court): correct PACER API date parsing for UTC offsets"
+git commit -m "fix(billing): handle Stripe invoice voiding on case dismissal"
+
+# 📖 Documentation
+git commit -m "docs(readme): add conflict-of-interest integration flow diagram"
+
+# 🧪 Tests
+git commit -m "test(case): add unit tests for case status transition rules"
+
+# ♻️  Refactoring
+git commit -m "refactor(audit): migrate to append-only MongoDB collection pattern"
+```
+
+#### **Step 6 — 🚀 Push & Open a Pull Request**
+
+```bash
+git push origin feat/add-docusign-bulk-send
+```
+
+Open a **Pull Request** against `master` and include:
+- 📝 **What** you changed and **why**
+- 🧪 **How** it was tested (unit / integration / manual)
+- 🔗 **Linked issue** (e.g. `Closes #17`)
+- 📸 **Screenshots or logs** for behaviour changes
+- ⚠️ **Breaking changes** clearly flagged if any
+
+---
+
+### 🔍 What to Work On
+
+Head to the [Issues](https://github.com/asohyannick/legal_case_management/issues) tab:
+
+| 🏷️ Label | 📄 Meaning |
+|---|---|
+| 🐛 `bug` | Something is broken and needs fixing |
+| ✨ `enhancement` | A new feature or meaningful improvement |
+| 📖 `documentation` | Docs are missing, outdated, or unclear |
+| 🧪 `tests` | Test coverage is missing or incomplete |
+| 🔐 `security` | Security hardening or vulnerability fix |
+| 🟢 `good first issue` | Perfect for new contributors |
+| 🆘 `help wanted` | We'd especially love community input here |
+| ⚖️ `compliance` | Legal/regulatory compliance improvements |
+
+---
+
+### 🧑‍💻 Development Guidelines
+
+#### ✅ Architecture Rules
+- 🏗️ **Clean Architecture layers must be respected** — no infrastructure or framework dependencies inside `Core` or `UseCases`
+- ⚡ **CQRS via MediatR** — all business logic lives in Command/Query Handlers, never in controllers
+- 🏷️ **Strongly-typed IDs** — use Vogen value objects for all entity identifiers
+- 📤 **Outbox pattern** for all Kafka event publishing — guarantees at-least-once delivery
+
+#### ✅ Integration Rules
+- 🔌 **DocuSign, Stripe, and Court API calls** must go through an interface — always mockable in tests
+- ⚡ **Redis** is cache-only — it is never the system of record; PostgreSQL/MongoDB is
+- 🔐 **All webhook endpoints** must validate signatures before processing any payload
+
+#### ✅ Code Quality
+- 🧪 **Unit test every use case handler** — no exceptions
+- 🔗 **Integration tests for every repository** using Testcontainers
+- ✅ **FluentValidation** for all incoming request models
+- 📊 **Serilog structured logging** with correlation IDs — no `Console.WriteLine`
+- ⚡ **`async`/`await` everywhere** — zero blocking calls (`.Result`, `.Wait()`)
+
+#### ❌ Hard Rules — Never Do These
+- ❌ Do not push directly to `master`
+- ❌ Do not commit secrets, API keys, or connection strings
+- ❌ Do not add business logic to controllers or API endpoint classes
+- ❌ Do not reference `Infrastructure` from `Core` or `UseCases`
+- ❌ Do not skip conflict-of-interest checks on case intake endpoints
+
+---
+
+### 🔄 Pull Request Review Process
+
+```
+Your PR → 🤖 CI (build + lint + tests) → 👀 Code Review → ✅ Approval → 🔀 Squash Merge
+```
+
+- ⏳ A maintainer will review within **3–5 business days**
+- 🤖 All CI checks **must pass** — build, test, and code style
+- 👥 **At least one approval** required before merging
+- 🔀 **Squash-and-merge** preferred to keep history clean
+
+---
+
+### 💬 Getting Help
+
+- 💡 **Questions** → [GitHub Discussions](https://github.com/asohyannick/legal_case_management/discussions)
+- 🐛 **Bugs & features** → [GitHub Issues](https://github.com/asohyannick/legal_case_management/issues)
+- 📧 **Direct contact** → asohyannick@example.com
+
+> 💬 No question is too small. If something confused you, it will confuse others — asking is a contribution in itself!
+
+---
+
+## 📜 Code of Conduct
+
+This project is committed to providing a welcoming, respectful, and inclusive environment for everyone. 🌍
+By contributing, you agree to uphold the [Contributor Covenant Code of Conduct](./CODE_OF_CONDUCT.md).
+
+---
+
+## 📄 License
+
+This project is licensed under the **MIT License** — see the [LICENSE](./LICENSE) file for full details.
+
+---
+
+<div align="center">
+
+### ⚖️ Built with ❤️ and lots of ☕ by **Asoh Yannick** — .NET Backend Developer
+
+#### 🌟 If this project helped you, please consider giving it a star — it means the world! 🌟
+
+[![GitHub stars](https://img.shields.io/github/stars/asohyannick/legal_case_management?style=social)](https://github.com/asohyannick/legal_case_management)
+[![GitHub forks](https://img.shields.io/github/forks/asohyannick/legal_case_management?style=social)](https://github.com/asohyannick/legal_case_management/fork)
+
+</div>

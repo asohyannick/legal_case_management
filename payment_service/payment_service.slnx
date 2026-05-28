@@ -1,0 +1,33 @@
+<Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+    <File Path=".template.config/template.json" />
+    <File Path="CleanArchitecture.nuspec" />
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Packages.props" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/payment_service.Core/payment_service.Core.csproj" />
+    <Project Path="src/payment_service.Infrastructure/payment_service.Infrastructure.csproj" />
+    <Project Path="src/payment_service.UseCases/payment_service.UseCases.csproj" />
+    <Project Path="src/payment_service.Web/payment_service.Web.csproj" />
+  </Folder>
+  <Folder Name="/src/_aspire/">
+    <Project Path="src/payment_service.AspireHost/payment_service.AspireHost.csproj" />
+    <Project Path="src/payment_service.ServiceDefaults/payment_service.ServiceDefaults.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/payment_service.FunctionalTests/payment_service.FunctionalTests.csproj">
+      <BuildDependency Project="src/payment_service.Web/payment_service.Web.csproj" />
+    </Project>
+    <Project Path="tests/payment_service.IntegrationTests/payment_service.IntegrationTests.csproj">
+      <BuildDependency Project="src/payment_service.Infrastructure/payment_service.Infrastructure.csproj" />
+    </Project>
+    <Project Path="tests/payment_service.UnitTests/payment_service.UnitTests.csproj" />
+  </Folder>
+</Solution>
